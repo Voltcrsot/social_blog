@@ -1,0 +1,94 @@
+{# users/templates/users/follow_list.html #}
+{% extends "base.html" %}
+{# --- ИЗМЕНЕНО: Добавлена загрузка user_tags --- #}
+{% load static user_tags %} {# Загружаем статику и наши user_tags #}
+
+{% block title %}
+    {# Динамический заголовок в зависимости от типа списка #}
+    {{ title }} - {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg p-6 md:p-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">
+        {# Заголовок страницы с ссылкой на профиль владельца списка #}
+        {% if list_type == 'following' %}
+            Подписки <a href="{{ owner_profile.get_absolute_url }}" class="text-blue-600 hover:underline">{{ owner_profile.user.username }}</a>
+        {% else %}
+            Подписчики <a href="{{ owner_profile.get_absolute_url }}" class="text-blue-600 hover:underline">{{ owner_profile.user.username }}</a>
+        {% endif %}
+        {# Показываем количество из queryset пагинатора #}
+        ({{ paginator.count }})
+    </h1>
+
+    {# Проверяем, есть ли кто-то в списке #}
+    {% if profile_list %}
+        <ul class="space-y-4">
+            {# Цикл по профилям на текущей странице пагинации #}
+            {% for p in profile_list %}
+                <li class="flex items-center space-x-4 py-3 border-b border-gray-100 last:border-b-0">
+                    {# Аватар и ссылка на профиль #}
+                    <a href="{{ p.get_absolute_url }}" class="flex-shrink-0">
+                        <img class="h-12 w-12 rounded-full object-cover"
+                             src="{% if p.avatar %}{{ p.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}" {# Убедитесь, что у вас есть static/images/default_avatar.png #}
+                             alt="Аватар {{ p.user.username }}">
+                    </a>
+                    {# Имя пользователя и ФИО #}
+                    <div class="flex-1 min-w-0">
+                        <a href="{{ p.get_absolute_url }}" class="text-sm font-semibold text-gray-900 hover:underline truncate block">
+                            {{ p.user.username }}
+                        </a>
+                        {% if p.user.get_full_name %}
+                            <p class="text-sm text-gray-500 truncate">{{ p.user.get_full_name }}</p>
+                        {% endif %}
+                    </div>
+                    {# --- Кнопка Подписаться/Отписаться (если это не мы и мы авторизованы) --- #}
+                    {% if user.is_authenticated and user != p.user %}
+                        {# Включаем тот же фрагмент кнопки, что и на странице профиля #}
+                        {# Передаем:
+                            'profile': p (профиль пользователя в списке)
+                            'is_following': Проверяем, подписан ли ТЕКУЩИЙ user на 'p', используя словарь из контекста и фильтр get_item
+                            'can_follow': True (т.к. мы залогинены и это не наш профиль)
+                            'requesting_user': user (текущий пользователь)
+                        #}
+                        {# --- ИЗМЕНЕНО: Используем фильтр get_item --- #}
+                        {% with profile=p is_following=current_user_following_status|get_item:p.pk can_follow=True requesting_user=user %}
+                            {% include "users/partials/follow_button_fragment.html" %}
+                        {% endwith %}
+                        {# --- КОНЕЦ ИЗМЕНЕНИЯ --- #}
+                    {% endif %}
+                    {# --- Конец кнопки --- #}
+                </li>
+            {% endfor %}
+        </ul>
+
+        {# Пагинация, если она есть #}
+        {% if is_paginated %}
+            <div class="mt-6">
+                {% include "includes/pagination.html" with page_obj=page_obj %}
+            </div>
+        {% endif %}
+
+    {% else %}
+        {# Сообщение, если список пуст #}
+        <p class="text-gray-500 py-6 text-center">
+            {% if list_type == 'following' %}
+                {{ owner_profile.user.username }} пока ни на кого не подписан.
+            {% else %}
+                У {{ owner_profile.user.username }} пока нет подписчиков.
+            {% endif %}
+        </p>
+    {% endif %}
+</div>
+{% endblock content %}
+
+{% block sidebar %}
+{# Можно добавить сайдбар, например, со ссылкой обратно на профиль владельца #}
+<div class="p-4 bg-gray-50 rounded shadow">
+    <h3 class="font-semibold mb-2">Профиль</h3>
+    <a href="{{ owner_profile.get_absolute_url }}" class="text-blue-600 hover:underline block">
+        {{ owner_profile.user.username }}
+    </a>
+    {# Можно добавить другую информацию о owner_profile #}
+</div>
+{% endblock sidebar %}

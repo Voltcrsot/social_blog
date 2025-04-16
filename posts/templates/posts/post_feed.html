@@ -1,0 +1,33 @@
+{# posts/templates/posts/post_feed.html #}
+{% extends "base.html" %}
+{% load humanize %}
+{% load post_tags %} {# Для get_item #}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+    <header class="mb-6 pb-3 border-b">
+        <h1 class="text-3xl font-bold text-gray-800">{{ title }}</h1>
+        <p class="text-gray-600 mt-1">Посты от пользователей, на которых вы подписаны.</p>
+    </header>
+
+    <div class="space-y-6">
+        {% if posts %}
+            {% for post in posts %}
+                {# Используем include для карточки поста #}
+                {# Убедитесь, что путь верный #}
+                {% include "posts/components/post_card/post_card.html" with post=post user_vote=user_votes|get_item:post.id %}
+            {% endfor %}
+        {% else %}
+            <div class="bg-white p-6 rounded shadow text-center text-gray-500">
+                В вашей ленте пока нет постов. Подпишитесь на интересных авторов!
+            </div>
+        {% endif %}
+    </div>
+
+    {# Включаем шаблон пагинации #}
+    {% include "includes/pagination.html" %}
+
+{% endblock content %}
+
+{# Сайдбар здесь такой же, как на главной #}

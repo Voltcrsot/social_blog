@@ -1,0 +1,34 @@
+{# users/templates/users/partials/follow_button_fragment.html #}
+{# Ожидает: profile (чей профиль смотрим), is_following (подписан ли ТЕКУЩИЙ юзер), can_follow, requesting_user #}
+
+{# Проверяем, что кнопку вообще нужно показывать (залогиненный юзер, не своя страница) #}
+{% if can_follow and requesting_user != profile.user %}
+{# Обертка для HTMX target. ID включает username для уникальности #}
+<div id="follow-button-{{ profile.user.username }}">
+    {# Форма для отправки POST запроса через HTMX #}
+    <form hx-post="{% url 'users:toggle_follow' username=profile.user.username %}"
+          {# Цель - этот же div, чтобы заменить кнопку #}
+          hx-target="#follow-button-{{ profile.user.username }}"
+          {# Заменяем весь div (outerHTML) новым содержимым #}
+          hx-swap="outerHTML"
+          method="post"
+          data-turbo="false" {# <--- ИЗМЕНЕНИЕ ЗДЕСЬ #}
+          class="inline-block">
+        {% csrf_token %} {# Обязательно для POST запросов #}
+
+        {% if is_following %}
+            {# Пользователь уже подписан -> показываем кнопку "Отписаться" #}
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                Отписаться
+            </button>
+        {% else %}
+            {# Пользователь не подписан -> показываем кнопку "Подписаться" #}
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                Подписаться
+            </button>
+        {% endif %}
+    </form>
+</div>
+{% endif %}

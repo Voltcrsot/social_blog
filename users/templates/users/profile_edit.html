@@ -1,0 +1,105 @@
+{# users/templates/users/profile_edit.html #}
+{% extends "base.html" %}
+{% load static widget_tweaks %} {# Добавляем загрузку widget_tweaks #}
+
+{% block title %}{{ title|default:"Редактирование профиля" }}{% endblock title %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-8 bg-white p-6 md:p-8 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">Редактирование профиля</h1>
+
+    {# Отображение сообщений Django #}
+    {% include 'includes/messages.html' %} {# Используем include для сообщений #}
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'users:profile_edit' %}" class="space-y-6">
+        {% csrf_token %}
+
+        {# --- Форма UserUpdateForm --- #}
+        <fieldset class="space-y-4">
+            <legend class="text-lg font-medium text-gray-900 border-b pb-2 mb-3">Основная информация</legend>
+            {% if user_form.non_field_errors %}
+                <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm" role="alert">
+                    {% for error in user_form.non_field_errors %} <p>{{ error }}</p> {% endfor %}
+                </div>
+            {% endif %}
+
+            {% for field in user_form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {# Используем render_field для добавления классов из виджета #}
+                    {% render_field field class+=" w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+                    {% if field.help_text %}
+                        <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in field.errors %} <p>{{ error }}</p> {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+             {# Показываем email из контекста, если он там есть #}
+             {% if user_email %}
+                <p class="text-sm text-gray-600 mt-2">Текущий Email: <strong>{{ user_email }}</strong></p>
+             {% endif %}
+        </fieldset>
+
+        {# --- Форма ProfileUpdateForm --- #}
+        {# Используем переменную profile_form из контекста #}
+        <fieldset class="space-y-4 pt-4">
+             <legend class="text-lg font-medium text-gray-900 border-b pb-2 mb-3">Профиль</legend>
+             {% if profile_form.non_field_errors %}
+                <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm" role="alert">
+                    {% for error in profile_form.non_field_errors %} <p>{{ error }}</p> {% endfor %}
+                </div>
+             {% endif %}
+
+             {% for field in profile_form %}
+                 <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {% if field.name == 'avatar' %}
+                        {# Показываем текущий аватар #}
+                        {% if profile_form.instance.avatar %} {# Проверяем аватар через экземпляр формы #}
+                            <div class="mb-2 flex items-center space-x-3">
+                                <img src="{{ profile_form.instance.avatar.url }}" alt="Текущий аватар" class="h-16 w-16 rounded-full object-cover">
+                                <span class="text-sm text-gray-500">Текущий аватар</span>
+                                {# Чекбокс "Очистить" будет выведен ниже вместе с полем #}
+                            </div>
+                         {% endif %}
+                         {# Рендерим поле файла #}
+                         {% render_field field class+=" block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" %}
+                    {% else %}
+                         {# Для поля bio #}
+                         {% render_field field class+=" w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+                    {% endif %}
+                    {% if field.help_text %}
+                        <p class="mt-1 text-xs text-gray-500">{{ field.help_text|safe }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in field.errors %} <p>{{ error }}</p> {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+             {% endfor %}
+        </fieldset>
+
+        {# --- Кнопки --- #}
+        <div class="flex justify-end space-x-3 pt-5 border-t mt-6">
+             {# Ссылка Отмена ведет на страницу просмотра профиля текущего пользователя #}
+            <a href="{% url 'users:profile_detail' username=request.user.username %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Отмена
+            </a>
+            <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Сохранить изменения
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock content %}
+
+{% block sidebar %}{% endblock sidebar %}

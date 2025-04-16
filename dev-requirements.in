@@ -1,0 +1,19 @@
+-r requirements.in # Включаем основные зависимости
+
+# Code Quality & Formatting
+black>=23.0
+flake8>=6.0
+isort>=5.12
+mypy>=1.5
+django-stubs # Тайп хинты для Django (для mypy)
+
+# Debugging
+django-debug-toolbar>=4.2
+
+# Testing
+pytest>=7.4
+pytest-django>=4.7
+pytest-cov>=4.1
+
+# Pre-commit hooks
+pre-commit>=3.4

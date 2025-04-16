@@ -1,0 +1,53 @@
+{# posts/templates/posts/partials/comment_recursive_fragment.html #}
+{% load humanize static %}
+
+{% with level=level|default:0 max_depth=3 %}
+<div id="comment-{{ comment.id }}" class="comment-container {% if level > 0 %}ml-4 md:ml-6 lg:ml-8 border-l-2 border-gray-100 pl-4 md:pl-6 lg:pl-8{% endif %}">
+    <article class="flex space-x-3 bg-white p-3 rounded-lg shadow-sm border border-gray-100 mb-3 relative">
+        {# Аватар #}
+        <div class="flex-shrink-0"> <a href="#"> <img class="h-10 w-10 rounded-full object-cover" src="{% if comment.author.profile.avatar %}{{ comment.author.profile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}" alt="Аватар {{ comment.author.username }}"> </a> </div>
+        {# Контент #}
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1 flex-wrap"> <a href="#" class="font-semibold text-sm text-gray-900 hover:underline mr-2">{{ comment.author.username }}</a> <span class="text-xs text-gray-500 flex-shrink-0" title="{{ comment.created_at|date:"d.m.Y H:i" }}">{{ comment.created_at|naturaltime }}</span> </div>
+
+            {# --- ОБЛАСТЬ ДЛЯ ЗАМЕНЫ НА ФОРМУ РЕДАКТИРОВАНИЯ --- #}
+            {# Убедитесь, что ID здесь есть! #}
+            <div id="comment-content-{{ comment.id }}" class="text-sm text-gray-700 whitespace-pre-wrap break-words mb-2">
+                {{ comment.content }}
+            </div>
+            {# --- КОНЕЦ ОБЛАСТИ --- #}
+
+            {# Действия #}
+            <div class="flex items-center space-x-3 text-xs mt-1">
+                {% if user.is_authenticated and level < max_depth %}
+                    <button type="button" hx-get="{% url 'posts:get_reply_form' comment_id=comment.id %}" hx-target="#reply-form-area-{{ comment.id }}" hx-swap="innerHTML" class="font-medium text-blue-600 hover:underline focus:outline-none"> Ответить </button>
+                {% endif %}
+
+                {# --- ИЗМЕНЕНО: Кнопка Редактировать с HTMX --- #}
+                {% if user == comment.author %}
+                    <button type="button"
+                            hx-get="{% url 'posts:get_edit_form' comment_id=comment.id %}" {# Новый URL #}
+                            hx-target="#comment-content-{{ comment.id }}" {# Заменяем текст коммента #}
+                            hx-swap="outerHTML" {# Заменяем весь div с текстом #}
+                            class="font-medium text-green-600 hover:underline focus:outline-none">
+                        Редактировать
+                    </button>
+                    <button type="button" hx-delete="{% url 'posts:delete_comment' comment_id=comment.id %}" hx-target="#comment-{{ comment.id }}" hx-swap="outerHTML swap:1s" hx-confirm="Вы уверены, что хотите удалить этот комментарий?" class="font-medium text-red-600 hover:underline focus:outline-none"> Удалить </button>
+                {% endif %}
+                {# --- КОНЕЦ ИЗМЕНЕНИЯ --- #}
+            </div>
+            {# Область для формы ответа #}
+            <div id="reply-form-area-{{ comment.id }}" class="mt-2"></div>
+        </div>
+    </article>
+
+    {# Рекурсивный вывод ответов #}
+    {% if level < max_depth %}
+        <div id="replies-for-{{ comment.id }}" class="replies-container">
+            {% for reply in comment.replies.all %}
+                 {% include "posts/partials/comment_recursive_fragment.html" with comment=reply user=user level=level|add:1 %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endwith %}

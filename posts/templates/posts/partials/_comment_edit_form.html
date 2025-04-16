@@ -1,0 +1,44 @@
+{# posts/templates/posts/partials/_comment_edit_form.html #}
+{# Ожидает 'form', 'comment' #}
+{% load widget_tweaks %}
+
+{# Форма редактирования, заменит блок контента #}
+<form hx-post="{% url 'posts:update_comment' comment_id=comment.id %}"
+      {# Цель - ВЕСЬ контейнер комментария, ЗАМЕНЯЕМ его обновленным #}
+      hx-target="#comment-{{ comment.id }}"
+      hx-swap="outerHTML"
+      method="post"
+      data-turbo="false" {# <--- ИЗМЕНЕНИЕ ЗДЕСЬ #}
+      class="space-y-2 edit-comment-form"> {# Добавим класс для возможного JS #}
+    {% csrf_token %}
+
+    {# Поле для редактирования текста #}
+    {% render_field form.content class+=" w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm" rows="3" %}
+    {% if form.content.errors %}
+        <div class="text-red-600 text-sm">
+            {% for error in form.content.errors %} {{ error }} {% endfor %}
+        </div>
+    {% endif %}
+     {% if form.non_field_errors %}
+        <div class="text-red-600 text-sm">
+             {% for error in form.non_field_errors %} {{ error }} {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Кнопки управления формой #}
+    <div class="flex justify-end space-x-2 text-xs">
+        <button type="button"
+                 hx-get="{% url 'posts:get_comment_content' comment_id=comment.id %}"
+                 {# Цель - эта же форма (или ее родитель comment-content-area), заменяем ее контентом #}
+                 hx-target="#comment-content-area-{{ comment.id }}"
+                 hx-swap="innerHTML"
+                 class="px-3 py-1.5 font-medium rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+             Отмена
+         </button>
+        <button type="submit"
+                class="px-3 py-1.5 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            Сохранить
+        </button>
+
+    </div>
+</form>

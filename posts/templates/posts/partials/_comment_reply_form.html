@@ -1,0 +1,47 @@
+{# posts/templates/posts/partials/_comment_reply_form.html #}
+{# Ожидает 'form', 'parent_comment', 'post_id' #}
+{% load widget_tweaks %}
+
+{# Обертка для удобства + небольшой отступ слева #}
+<div class="reply-form-wrapper mt-3 ml-4 border-l-2 pl-4">
+    <form hx-post="{% url 'posts:add_comment' post_id=post_id %}"
+          {# Цель - контейнер ответов РОДИТЕЛЯ, добавляем в конец #}
+          hx-target="#replies-for-{{ parent_comment.id }}"
+          hx-swap="beforeend"
+          {# После УСПЕШНОГО запроса удаляем эту форму #}
+          hx-on::after-request="if(event.detail.successful) this.closest('.reply-form-wrapper').remove()"
+          method="post"
+          data-turbo="false" {# <--- ИЗМЕНЕНИЕ ЗДЕСЬ #}
+          class="space-y-2">
+        {% csrf_token %}
+        {# Скрытое поле для ID родительского комментария #}
+        <input type="hidden" name="parent_id" value="{{ parent_comment.id }}">
+
+        {# Поле для ввода текста #}
+        {% render_field form.content class+=" w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm" rows="2" placeholder="Ваш ответ..." %}
+        {% if form.content.errors %}
+            <div class="text-red-600 text-sm">
+                {% for error in form.content.errors %} {{ error }} {% endfor %}
+            </div>
+        {% endif %}
+         {% if form.non_field_errors %}
+            <div class="text-red-600 text-sm">
+                 {% for error in form.non_field_errors %} {{ error }} {% endfor %}
+            </div>
+        {% endif %}
+
+        {# Кнопки управления формой #}
+        <div class="flex justify-end space-x-2">
+             <button type="button"
+                     {# Кнопка отмены - просто удаляет эту форму #}
+                     onclick="this.closest('.reply-form-wrapper').remove()"
+                     class="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                 Отмена
+             </button>
+            <button type="submit"
+                    class="px-3 py-1.5 text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Ответить
+            </button>
+        </div>
+    </form>
+</div>

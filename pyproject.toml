@@ -1,0 +1,45 @@
+[tool.black]
+# Настройки для Black
+line-length = 88
+target-version = ['py311'] # Указываем версию Python
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+  | node_modules
+)/
+'''
+
+[tool.isort]
+# Настройки для isort
+profile = "black" # Профиль совместимости с black
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+# Указываем Django как фреймворк первого уровня для сортировки
+known_django = "django"
+# Определяем порядок секций импортов
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "DJANGO", "FIRSTPARTY", "LOCALFOLDER"]
+skip_glob = ["*/migrations/*", "venv/*", ".venv/*"] # Пропускаем папки
+
+# Настройки MyPy (если будете использовать)
+# [tool.mypy]
+# python_version = "3.11"
+# plugins = ["mypy_django_plugin.main"]
+# exclude = ["venv", "\.venv", "migrations"]
+# ignore_missing_imports = true # Можно добавить, если много ошибок на библиотеки без типов
+
+# [tool.django-stubs] # Настройки django-stubs для MyPy
+# django_settings_module = "config.settings"

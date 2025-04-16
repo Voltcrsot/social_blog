@@ -1,0 +1,26 @@
+{# theme/components/category_list/category_list.html #}
+{% load post_tags %} {# Загружаем наш тег get_item (если нужен) #}
+
+<div class="bg-white p-4 rounded shadow">
+    <h3 class="text-lg font-semibold mb-3 border-b pb-2">Категории</h3>
+    <ul class="space-y-1">
+        {# Ссылка на все посты #}
+        <li>
+            <a href="{% url 'posts:post_list_global' %}"
+               class="block text-blue-600 hover:underline {% if not current_category %}font-bold text-blue-800{% endif %}">
+                Все посты
+            </a>
+        </li>
+        {# Список категорий #}
+        {% for cat in all_categories %}
+            <li>
+                <a href="{{ cat.get_absolute_url }}"
+                   class="block text-blue-600 hover:underline {% if current_category and current_category.slug == cat.slug %}font-bold text-blue-800{% endif %}">
+                    {{ cat.name }} ({{ cat.num_posts }})
+                </a>
+            </li>
+        {% empty %}
+             <li>Категорий пока нет.</li>
+        {% endfor %}
+    </ul>
+</div>

@@ -1,0 +1,179 @@
+{# posts/templates/posts/post_detail.html #}
+{% extends "base.html" %}
+{% load humanize static widget_tweaks %} {# Добавили widget_tweaks на случай использования в include #}
+{% load post_tags %}
+
+{% block title %}{{ post.title }} - {{ block.super }}{% endblock title %}
+
+{% block content %}
+<article class="bg-white p-6 md:p-8 rounded-lg shadow mb-8">
+    {# --- Шапка поста --- #}
+    <header class="mb-6 pb-4 border-b border-gray-200">
+        {% if post.category %}
+            <a href="{{ post.category.get_absolute_url }}" class="text-sm font-semibold text-blue-600 uppercase hover:underline tracking-wide">{{ post.category.name }}</a>
+        {% endif %}
+        <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mt-2 mb-3">{{ post.title }}</h1>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500">
+            <a href="{% url 'users:profile_detail' username=post.author.username %}" class="flex-shrink-0"> {# Исправлена ссылка на профиль автора #}
+                {% if post.author.profile.avatar %}
+                    <img src="{{ post.author.profile.avatar.url }}" alt="Аватар {{ post.author.username }}" class="w-8 h-8 rounded-full object-cover">
+                {% else %}
+                    <span class="inline-block h-8 w-8 overflow-hidden rounded-full bg-gray-100">
+                        <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    </span>
+                {% endif %}
+            </a>
+            <span class="font-medium">Автор: <a href="{% url 'users:profile_detail' username=post.author.username %}" class="text-blue-600 hover:underline">{{ post.author.username }}</a></span> {# Исправлена ссылка #}
+            <span class="text-gray-400 hidden sm:inline">•</span>
+            <time datetime="{{ post.published_at.isoformat }}" title="{{ post.published_at|date:"d E Y H:i" }}" class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-1 flex-shrink-0"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5h10.5a.75.75 0 0 0 0-1.5H4.75a.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" /></svg>
+                {{ post.published_at|date:"d E Y" }} ({{ post.published_at|naturaltime }})
+            </time>
+        </div>
+    </header>
+
+
+    {# --- Содержимое поста --- #}
+    <div class="prose prose-lg prose-blue max-w-none mt-6 mb-8">
+        {{ post.content|linebreaksbr }} {# Используем linebreaksbr для <br> вместо <p> #}
+    </div>
+
+    {# --- Реакции (Лайки/Дизлайки/Комменты) --- #}
+    <footer class="pt-4 border-t border-gray-200">
+         {% include "posts/partials/post_actions_fragment.html" with post=post user_vote=user_vote %}
+    </footer>
+
+</article>
+
+{# --- Секция комментариев --- #}
+<section id="comments" class="mt-8 bg-white p-6 md:p-8 rounded-lg shadow">
+    {# Используем аннотацию comments_count, если она есть, иначе считаем через post.comments.count #}
+    <h2 class="text-2xl font-bold mb-6">Комментарии ({{ post.comments_count|default:post.comments.count }})</h2>
+
+
+    {# --- Форма добавления комментария ВЕРХНЕГО УРОВНЯ --- #}
+     {% if user.is_authenticated %}
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold mb-3">Оставить комментарий</h3>
+            <form id="comment-form"
+                  hx-post="{% url 'posts:add_comment' post_id=post.id %}"
+                  hx-target="#comment-list" {# Цель - список комментариев #}
+                  hx-swap="beforeend" {# Добавляем в конец списка #}
+                  {# Сбрасываем форму после успешной отправки #}
+                  hx-on::after-request="if(event.detail.successful) this.reset()"
+                  method="post"
+                  data-turbo="false" {# <--- ИЗМЕНЕНИЕ ЗДЕСЬ #}
+                  class="space-y-3">
+                {% csrf_token %}
+                {% if comment_form %}
+                    {# Используем widget_tweaks для рендеринга поля с классами #}
+                    {% render_field comment_form.content class+=" w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm" rows="3" placeholder="Напишите ваш комментарий..." %}
+                    {% if comment_form.content.errors %}
+                        <div class="text-red-600 text-sm mt-1">
+                            {% for error in comment_form.content.errors %} <p>{{ error }}</p> {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if comment_form.non_field_errors %}
+                        <div class="text-red-600 text-sm mt-1">
+                            {% for error in comment_form.non_field_errors %} <p>{{ error }}</p> {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="text-right">
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150">
+                            Отправить
+                        </button>
+                    </div>
+                {% else %}
+                     <p class="text-sm text-gray-500">Не удалось загрузить форму комментария.</p>
+                {% endif %}
+            </form>
+        </div>
+     {% else %}
+        <p class="mb-8 text-center text-gray-600">
+            Пожалуйста,
+            <a href="{% url 'users:login' %}?next={{ request.path }}#comments" class="text-blue-600 hover:underline">войдите</a>
+            или
+            <a href="{% url 'users:register' %}?next={{ request.path }}#comments" class="text-blue-600 hover:underline">зарегистрируйтесь</a>,
+            чтобы оставить комментарий.
+        </p>
+     {% endif %}
+
+    {# --- Список комментариев --- #}
+    <div id="comment-list" class="space-y-4">
+         {# Используем comments из контекста (предзагруженные в view) #}
+        {% for comment in comments %} {# comments передаются из PostDetailView.get_context_data #}
+           {% if comment.parent is None %} {# Отображаем только комментарии верхнего уровня #}
+               {# Используем правильный путь к шаблону отображения комментария #}
+               {% include "posts/components/comment_display/comment_display.html" with comment=comment user=request.user level=0 %}
+           {% endif %}
+        {% empty %}
+            <p id="no-comments-placeholder" class="text-gray-500">Комментариев пока нет.</p>
+        {% endfor %}
+    </div>
+
+</section>
+
+{% endblock content %}
+
+{% block sidebar %} {# Оставляем пустым для детальной страницы поста #} {% endblock sidebar %}
+
+{# --- JavaScript для этой страницы --- #}
+{% block extra_js %}
+{{ block.super }} {# Включаем скрипты из базового шаблона, если они есть #}
+<script>
+// Функция для удаления плейсхолдера "Нет комментариев"
+function removeNoCommentsPlaceholderIfNeeded() {
+const placeholder = document.getElementById('no-comments-placeholder');
+const commentList = document.getElementById('comment-list');
+if (!placeholder || !commentList) return; // Если элементов нет, выходим
+
+
+let hasRealComment = false;
+        for (let i = 0; i < commentList.children.length; i++) {
+            // Проверяем, что элемент - это контейнер комментария, а не сам плейсхолдер
+            if (commentList.children[i].classList.contains('comment-container')) {
+                hasRealComment = true;
+                break;
+            }
+        }
+
+        if (hasRealComment) {
+            // console.log("Removing placeholder because comments exist.");
+            placeholder.remove();
+        } else if (commentList.children.length === 0 && !document.getElementById('no-comments-placeholder')) {
+             // Если список пуст и плейсхолдера нет, добавляем его (на случай удаления последнего коммента)
+             // console.log("Adding placeholder because list is empty.");
+             // commentList.innerHTML = '<p id="no-comments-placeholder" class="text-gray-500">Комментариев пока нет.</p>';
+             // Эта логика лучше обрабатывается через OOB из delete_comment
+        }
+    }
+
+    // Вызываем при загрузке страницы
+    document.addEventListener('DOMContentLoaded', removeNoCommentsPlaceholderIfNeeded);
+
+    // Слушаем общее событие HTMX для обновления плейсхолдера
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+         // Проверяем, был ли swap внутри списка комментариев или контейнера ответов
+         const target = event.detail.target;
+         if (target && (target.id === 'comment-list' || target.id.startsWith('replies-for-') || target.closest('#comment-list'))) {
+             // Даем небольшую задержку, чтобы DOM успел обновиться
+             setTimeout(removeNoCommentsPlaceholderIfNeeded, 50);
+         }
+         // Проверяем OOB swap
+         if (event.detail.xhr && event.detail.xhr.getResponseHeader('HX-Swap-Oob')) {
+              // Даем задержку и для OOB
+              setTimeout(removeNoCommentsPlaceholderIfNeeded, 100);
+         }
+    });
+
+     // Слушаем кастомное событие для показа сообщений (если используется HX-Trigger)
+    document.body.addEventListener('showMessage', function(evt){
+        // Здесь можно реализовать показ сообщения (например, через toast-уведомление)
+        console.log("Message from server:", evt.detail.value);
+         // Простой alert для примера:
+         // alert(evt.detail.value);
+    });
+
+</script>
+
+{% endblock extra_js %}

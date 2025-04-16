@@ -1,0 +1,36 @@
+{# posts/components/post_actions/post_actions.html #}
+{# Ожидает 'post' (с аннотациями *_count) и 'user_vote' (1, -1 или None) #}
+
+{# --- Лайк --- #}
+<button type="button"
+{# --- Убедитесь, что здесь ТОЧНО этот тег url --- #}
+hx-post="{% url 'posts:post_vote' post_id=post.id %}"
+hx-vals='{"vote_type": "like"}'
+hx-target="#post-actions-{{ post.id }}"
+hx-swap="outerHTML"
+class="flex items-center space-x-1 hover:text-green-600 {% if user_vote == 1 %}text-green-600 font-bold{% else %}text-gray-500{% endif %} transition duration-150"
+title="Нравится">
+<svg class="w-4 h-4" fill="none" stroke-width="2" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V3a.75.75 0 0 1 .75-.75A2.25 2.25 0 0 1 16.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558-.586 1.08-.968 1.56L10.17 17.25a.75.75 0 0 0 1.06 1.06l7.5-7.5a.75.75 0 1 0-1.06-1.06L12 15.689V18.75a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1-.75-.75v-4.172a2.25 2.25 0 0 0-.659-1.591L6.057 10.8a.75.75 0 0 1 .277-.533Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="text-xs">{{ post.likes_count|default:0 }}</span>
+</button>
+
+{# --- Дизлайк --- #}
+<button type="button"
+{# --- Убедитесь, что здесь ТОЧНО этот тег url --- #}
+hx-post="{% url 'posts:post_vote' post_id=post.id %}"
+hx-vals='{"vote_type": "dislike"}'
+hx-target="#post-actions-{{ post.id }}"
+hx-swap="outerHTML"
+class="flex items-center space-x-1 hover:text-red-600 {% if user_vote == -1 %}text-red-600 font-bold{% else %}text-gray-500{% endif %} transition duration-150"
+title="Не нравится">
+<svg class="w-4 h-4" fill="none" stroke-width="2" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 15h2.25m8.024-9.995c.016-.558.108-1.116.317-1.642a4.5 4.5 0 0 0-.1-.438c-.18-.495-.406-.96-.688-1.386a.75.75 0 0 0-1.22-.298L9.17 8.25H6.75a.75.75 0 0 0-.75.75v2.25c0 .414.336.75.75.75h2.47l.528 1.159a.75.75 0 0 0 1.444-.11V12h.01c.16.5.366.976.61 1.409.242.433.513.83.809 1.191l.426.571a.75.75 0 0 0 1.061.048l3.075-3.075a.75.75 0 0 0-.048-1.06l-1.12-1.12a.75.75 0 0 1-.21-.53V9.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75v.75Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="text-xs">{{ post.dislikes_count|default:0 }}</span>
+</button>
+
+{# --- Ссылка на комментарии --- #}
+<a href="{% if post %}{{ post.get_absolute_url }}#comments{% else %}#{% endif %}"
+class="flex items-center space-x-1 text-gray-500 hover:text-blue-600"
+title="Комментарии">
+<svg class="w-4 h-4" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="text-xs">{{ post.comments_count|default:0 }}</span>
+</a>

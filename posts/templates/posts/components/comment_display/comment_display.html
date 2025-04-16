@@ -1,0 +1,99 @@
+{# posts/templates/posts/components/comment_display/comment_display.html #}
+{% load static humanize widget_tweaks %}
+
+{% with level=level|default:0 max_depth=5 %}
+<div id="comment-{{ comment.id }}" class="comment-container {% if level > 0 %}ml-4 md:ml-6 lg:ml-8 border-l-2 border-gray-100 pl-4 md:pl-6 lg:pl-8 pt-3{% endif %}">
+
+
+{# ----- ОТЛАДОЧНЫЙ БЛОК (УДАЛИТЬ ИЛИ ЗАКОММЕНТИРОВАТЬ) ----- #}
+{#
+<div style="border: 1px dashed green; padding: 3px; margin-bottom: 5px; font-size: 10px;">
+    DEBUG: Comment ID: {{ comment.id }} | Parent ID: {{ comment.parent.id|default:"None" }} | Level: {{ level }} | Author: {{ comment.author.id }} | Current User: {{ user.id }}
+</div>
+#}
+{# ----- КОНЕЦ ОТЛАДОЧНОГО БЛОКА ----- #}
+
+<article class="flex space-x-3 bg-white p-3 rounded-lg shadow-sm border border-gray-100 mb-3 relative">
+    {# Аватар автора #}
+    <div class="flex-shrink-0">
+        <a href="{% url 'users:profile_detail' username=comment.author.username %}">
+            <img class="h-10 w-10 rounded-full object-cover"
+                 src="{% if comment.author.profile.avatar %}{{ comment.author.profile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
+                 alt="{{ comment.author.username }}">
+        </a>
+    </div>
+
+    {# Основное содержимое комментария #}
+    <div class="flex-1 min-w-0">
+         {# Имя автора и дата #}
+        <div class="flex items-center justify-between mb-1 flex-wrap">
+            <a href="{% url 'users:profile_detail' username=comment.author.username %}" class="font-semibold text-sm text-gray-900 hover:underline mr-2">
+                {{ comment.author.username }}
+            </a>
+            <span class="text-xs text-gray-500 flex-shrink-0" title="{{ comment.created_at|date:"d.m.Y H:i" }}">
+                {{ comment.created_at|naturaltime }}
+            </span>
+        </div>
+
+        {# Область контента #}
+        <div id="comment-content-area-{{ comment.id }}">
+        <div id="comment-content-{{ comment.id }}" class="text-sm text-gray-700 whitespace-pre-wrap break-words mb-2">
+            {{ comment.content }} {# <--- Вот здесь #}
+        </div>
+
+        </div>
+
+        {# Действия с комментарием #}
+        <div class="flex items-center space-x-3 text-xs mt-1">
+            {# Кнопка Ответить #}
+            {% if user.is_authenticated and level < max_depth %}
+                <button type="button"
+                        hx-get="{% url 'posts:get_reply_form' comment_id=comment.id %}"
+                        hx-target="#reply-form-area-{{ comment.id }}"
+                        hx-swap="innerHTML"
+                        class="font-medium text-blue-600 hover:underline focus:outline-none">
+                    Ответить
+                </button>
+            {% endif %}
+
+            {# Кнопки Редактировать и Удалить #}
+            {# ----- ОТЛАДКА УСЛОВИЯ (УДАЛИТЬ ИЛИ ЗАКОММЕНТИРОВАТЬ) ----- #}
+            {#
+            <p style="color: purple; font-size: 10px;">DEBUG Check: User ({{user.id}}) == Author ({{comment.author.id}})? {% if user == comment.author %}TRUE{% else %}FALSE{% endif %}</p>
+            #}
+            {# ----- КОНЕЦ ОТЛАДКИ ----- #}
+            {% if user == comment.author %}
+                <button type="button"
+                        hx-get="{% url 'posts:get_edit_form' comment_id=comment.id %}"
+                        hx-target="#comment-content-area-{{ comment.id }}"
+                        hx-swap="innerHTML"
+                        class="font-medium text-green-600 hover:underline focus:outline-none">
+                    Редактировать
+                </button>
+                 <button type="button"
+                        hx-delete="{% url 'posts:delete_comment' comment_id=comment.id %}"
+                        hx-target="#comment-{{ comment.id }}"
+                        hx-swap="outerHTML swap:0.5s"
+                        hx-confirm="Вы уверены, что хотите удалить этот комментарий?"
+                        class="font-medium text-red-600 hover:underline focus:outline-none">
+                    Удалить
+                </button>
+            {% endif %}
+        </div>
+
+        {# Область для формы ответа #}
+        <div id="reply-form-area-{{ comment.id }}" class="mt-2"></div>
+
+    </div>{# Конец flex-1 #}
+</article>{# Конец article #}
+
+{# Область для дочерних комментариев (ответы) #}
+<div id="replies-for-{{ comment.id }}" class="replies-container">
+    {% for reply in comment.replies.all %}
+         {% include "posts/components/comment_display/comment_display.html" with comment=reply user=user level=level|add:1 %}
+    {% endfor %}
+</div>
+
+    </div> {# Конец comment-container #}
+{% endwith %}
+

@@ -1,0 +1,30 @@
+{# posts/templates/posts/post_list.html #}
+{% extends "base.html" %}
+{% load humanize %}
+{% load post_tags %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+    <header class="mb-6 pb-3 border-b">
+        <h1 class="text-3xl font-bold text-gray-800">{{ title }}</h1>
+        {% if category.description %} <p class="text-gray-600 mt-1">{{ category.description }}</p> {% endif %}
+    </header>
+    <div class="space-y-6">
+        {% if posts %}
+            {% for post in posts %}
+                {# Используем include для карточки поста #}
+                {# Убедитесь, что путь верный #}
+                {% include "posts/components/post_card/post_card.html" with post=post user_vote=user_votes|get_item:post.id %}
+            {% endfor %}
+        {% else %}
+             <div class="bg-white p-6 rounded shadow text-center text-gray-500">
+                 Постов пока нет.
+                 {% if perms.posts.add_post %}
+                     <a href="{% url 'posts:post_create' %}" class="text-blue-600 hover:underline ml-2">Создать первый пост?</a>
+                 {% endif %}
+             </div>
+        {% endif %}
+    </div>
+    {% include "includes/pagination.html" %}
+{% endblock content %}
